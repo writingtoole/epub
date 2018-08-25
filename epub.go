@@ -64,6 +64,7 @@ type EPub struct {
 	uuid      string
 	title     string
 	authors   []string
+	artists   []string
 }
 
 type pair struct {

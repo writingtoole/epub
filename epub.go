@@ -16,10 +16,10 @@
 // from the spine of the book. Books with unreferenced files are
 // technically illegally formatted.
 //
-// It doesn't matter what order your code calls AddImage, AddXHTML, or
-// AddStylesheet to put files in the ePub book. Nor does it matter
-// what order your code calls AddNavpoints to add files to the
-// book spine.
+// It doesn't matter what order your code calls AddImage, AddXHTML,
+// AddJavascript, or AddStylesheet to put files in the ePub book. Nor
+// does it matter what order your code calls AddNavpoints to add files
+// to the book spine.
 //
 // ePub files are specially formatted zip archives. You can unzip the
 // resulting .epub file and inspect the contents if needed.
@@ -38,6 +38,7 @@ package epub
 import (
 	"archive/zip"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -60,6 +61,8 @@ type EPub struct {
 	xhtml     []xhtml
 	navpoints []*Navpoint
 	styles    []style
+	scripts   []javascript
+	fonts     []font
 	lastId    map[string]int
 	uuid      string
 	title     string
@@ -81,6 +84,18 @@ type metadata struct {
 type style struct {
 	name     string
 	contents string
+	id       Id
+}
+
+type javascript struct {
+	name     string
+	contents string
+	id       Id
+}
+
+type font struct {
+	name     string
+	contents []byte
 	id       Id
 }
 
@@ -186,8 +201,60 @@ func (e *EPub) AddImageFile(source, dest string) (Id, error) {
 	return e.AddImage(dest, c)
 }
 
+// AddJavaScript adds a JavaScript file to the ePub book. Path is the
+// relative path in the book to the javascript file, and contents is
+// the JavaScript itself.
+//
+// Returns the ID of the added file, or an error if something went wrong.
+func (e *EPub) AddJavaScript(path, contents string) (Id, error) {
+	j := javascript{name: path, contents: contents, id: e.nextId("js")}
+	e.scripts = append(e.scripts, j)
+	return j.id, nil
+}
+
+// AddJavaScriptFile adds the named JavaScript file to the ePub
+// book. source is the name of the file to be added while dest is the
+// name the file should have in the ePub book.
+//
+// Returns the ID of the added file, or an error if something went
+// wrong reading the file.
+func (e *EPub) AddJavaScriptFile(source, dest string) (Id, error) {
+	c, err := ioutil.ReadFile(source)
+	if err != nil {
+		return "", err
+	}
+	return e.AddJavaScript(dest, string(c))
+}
+
+// AddFont adds a font to the ePub book. Path is the relative path in
+// the book to the font, and contents is the contents of the font.
+//
+// Returns the ID of the added file, or an error if something went wrong.
+func (e *EPub) AddFont(path string, contents []byte) (Id, error) {
+	if !strings.HasSuffix(path, ".otf") {
+		return "", errors.New("Only opentype fonts are supported")
+	}
+
+	f := font{name: path, contents: contents, id: e.nextId("font")}
+	e.fonts = append(e.fonts, f)
+	return f.id, nil
+}
+
+// AddFontFile adds the named font to the epub book. Source is the
+// name of the file to be added while dest is the name the file should
+// have in the ePub book.
+//
+// Returns the ID of the added file, or an error if something went wrong.
+func (e *EPub) AddFontFile(source, dest string) (Id, error) {
+	c, err := ioutil.ReadFile(source)
+	if err != nil {
+		return "", err
+	}
+	return e.AddFont(dest, c)
+}
+
 // AddXHTML adds an xhtml file to the ePub book. Path is the relative
-// path to this fie in the book, and contents is the contents of the
+// path to this file in the book, and contents is the contents of the
 // xhtml file.
 //
 // By default each file appears in the book's spine in the order they
@@ -358,6 +425,30 @@ func (e *EPub) Write(name string) error {
 		}
 	}
 
+	// Add the javascript.
+	for _, s := range e.scripts {
+		w, err = z.Create("OPS/" + s.name)
+		if err != nil {
+			return err
+		}
+		length, err := w.Write([]byte(s.contents))
+		if err != nil {
+			return fmt.Errorf("unable to write %v, %v of %v bytes: %v", s.name, length, len(s.contents), err)
+		}
+	}
+
+	// Add the fonts.
+	for _, f := range e.fonts {
+		w, err = z.Create("OPS/" + f.name)
+		if err != nil {
+			return err
+		}
+		length, err := w.Write(f.contents)
+		if err != nil {
+			return fmt.Errorf("unable to write %v, %v of %v bytes: %v", f.name, length, len(f.contents), err)
+		}
+	}
+
 	if err = e.addContent(z); err != nil {
 		return err
 	}
@@ -415,6 +506,12 @@ func (e *EPub) addManifest(w io.Writer) error {
 	}
 	for _, s := range e.styles {
 		fmt.Fprintf(w, "    <item id=%q href=%q media-type=%q />\n", s.id, s.name, "text/css")
+	}
+	for _, s := range e.scripts {
+		fmt.Fprintf(w, "    <item id=%q href=%q media-type=%q />\n", s.id, s.name, "application/javascript")
+	}
+	for _, f := range e.fonts {
+		fmt.Fprintf(w, "    <item id=%q href=%q media-type=%q />\n", f.id, f.name, "application/opentype")
 	}
 
 	fmt.Fprintf(w, "  </manifest>\n")

@@ -21,18 +21,17 @@ All files in an ePub should be reachable, directly or indirectly,
 from the spine of the book. Books with unreferenced files are
 technically illegally formatted.
 
-It doesn't matter what order your code calls AddImage, AddXHTML, or
-AddStylesheet to put files in the ePub book. Nor does it matter
-what order your code calls AddNavpoints to add files to the
-book spine.
+It doesn't matter what order your code calls AddImage, AddXHTML,
+AddFont, AddJavaScript, or AddStylesheet to put files in the ePub
+book. Nor does it matter what order your code calls AddNavpoints to
+add files to the book spine.
 
 ePub files are specially formatted zip archives. You can unzip the
 resulting .epub file and inspect the contents if needed.
 
 # Limitations
 
-Currently this package doesn't support adding fonts or JavaScript
-files, nor does it support encrypted or DRM'd books.
+Currently this package doesn't support encrypted or DRM'd books.
 
 This package intentionally writes out ePub v2.0 format files. The
 current standard version is (as of 8/2018) v3.1. All ePub readers

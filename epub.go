@@ -46,7 +46,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 
 	img "image"
 	_ "image/gif"

@@ -5,6 +5,7 @@ package epub
 import (
 	"archive/zip"
 	"bytes"
+	"compress/flate"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,6 +17,16 @@ import (
 func (e *EPub) WriteV2(name string) error {
 	buf := new(bytes.Buffer)
 	z := zip.NewWriter(buf)
+
+	// Make sure we're using deflate, which is the only compression
+	// scheme that ePub officially suports. This is the default, but we
+	// do this to be extra careful. Since we're registering a compressor
+	// anyway we also turn on max compression. This doesn't make much
+	// difference for most books (text compresses really well already,
+	// and images don't) but that's fine.
+	z.RegisterCompressor(zip.Deflate, func(out io.Writer) (io.WriteCloser, error) {
+		return flate.NewWriter(out, flate.BestCompression)
+	})
 
 	// add mimetype
 	w, err := z.Create("mimetype")

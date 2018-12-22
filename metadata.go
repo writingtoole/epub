@@ -40,7 +40,7 @@ func (e *EPub) AddCreator(creator string, role string) error {
 	m := metadata{
 		kind:  "dc:creator",
 		value: creator,
-		pairs: []pair{{key: "opf:role", value: role}},
+		pairs: []pair{{v2prefix: "opf:", key: "role", value: role, scheme: "marc:relators"}},
 	}
 	e.metadata = append(e.metadata, m)
 	return nil
@@ -57,7 +57,7 @@ func (e *EPub) AddContributor(creator string, role string) error {
 	m := metadata{
 		kind:  "dc:contributor",
 		value: creator,
-		pairs: []pair{{key: "opf:role", value: role}},
+		pairs: []pair{{v2prefix: "opf:", key: "role", value: role, scheme: "marc:relators"}},
 	}
 	e.metadata = append(e.metadata, m)
 	return nil

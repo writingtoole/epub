@@ -2,8 +2,11 @@
 
 A Go library for the creation of ePub ebook files.
 
-This package creates basic ePub v2.0 format files, suitable for
-creating books.
+This package creates basic ePub v2.0 or V3.0 format files, suitable
+for creating books. By default books are tagged and written out as V2,
+but you can write V3 format books either by calling the WriteV3 method
+directly or by setting the ePub version to 3 via SetVersion(3) and
+then calling Write().
 
 An ePub file consists of one or more XHTML files that represent
 the text of your book, the resources those files reference, and the
@@ -31,12 +34,13 @@ resulting .epub file and inspect the contents if needed.
 
 # Limitations
 
-Currently this package doesn't support encrypted or DRM'd books.
+Currently this package doesn't support encrypted or DRM'd books or content.
 
-This package intentionally writes out ePub v2.0 format files. The
-current standard version is (as of 8/2018) v3.1. All ePub readers
-can manage v2.0 files but not all can manage 3.x, which is why
-we're writing the older format.
+Fonts are not obscured when writing V3 format files.
+
+None of the interesting bits of the V3 format are currently supported;
+v3 books are basically identical to v2 books only using the updated
+metadata file formats.
 
 # License
 

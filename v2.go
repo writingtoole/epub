@@ -186,7 +186,7 @@ func (e *EPub) addMetadata(w io.Writer) error {
 	for _, m := range e.metadata {
 		fmt.Fprintf(w, `    <%s`, m.kind)
 		for _, p := range m.pairs {
-			fmt.Fprintf(w, ` %s="%s"`, p.key, p.value)
+			fmt.Fprintf(w, ` %s%s="%s"`, p.v2prefix, p.key, p.value)
 		}
 		// If there's a value then it's a container-style XML thing
 		if len(m.value) != 0 {

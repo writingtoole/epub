@@ -29,10 +29,9 @@
 // Currently this package doesn't support adding fonts or JavaScript
 // files, nor does it support encrypted or DRM'd books.
 //
-// This package intentionally writes out ePub v2.0 format files. The
-// current standard version is (as of 8/2018) v3.1. All ePub readers
-// can manage v2.0 files but not all can manage 3.x, which is why
-// we're writing the older format.
+// By default this package writes out ePub v2.0 format files. You can
+// write V3 files either by calling the WriteV3 method directly, or
+// setting the epub object's version to v3 by e.SetVersion(3).
 package epub
 
 import (
@@ -40,6 +39,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strconv"
 	"strings"
 
@@ -66,11 +66,21 @@ type EPub struct {
 	title     string
 	authors   []string
 	artists   []string
+	// If true then do a bit of preprocessing to xhtml
+	// files when writing v3 format books.
+	fixV2XHTML bool
+	coverID    Id
 }
 
 type pair struct {
-	key   string
-	value string
+	key string
+	// Key prefix for ePub v2 books
+	v2prefix string
+	// Key prefix for ePub v3 books
+	v3prefix string
+	value    string
+	// Metadata scheme
+	scheme string
 }
 
 type metadata struct {
@@ -125,7 +135,7 @@ type Navpoint struct {
 
 // New creates a new empty ePub file.
 func New() *EPub {
-	ret := &EPub{lastId: make(map[string]int), version: 2}
+	ret := &EPub{lastId: make(map[string]int), version: 2, fixV2XHTML: true}
 	u, err := uuid.NewV4()
 	if err != nil {
 		panic(fmt.Sprintf("can't create UUID: %v", err))
@@ -134,14 +144,17 @@ func New() *EPub {
 	ret.metadata = append(ret.metadata, metadata{
 		kind:  "dc:identifier",
 		value: ret.uuid,
-		pairs: []pair{{"id", "BookId"}},
+		pairs: []pair{{key: "id", value: "BookId"}},
 	})
 
 	return ret
 }
 
+// SetVersion sets the default version of the ePub file. Throws an
+// error if an unrecognized version is specified; currently only 2 and
+// 3 are recognized.
 func (e *EPub) SetVersion(version float64) error {
-	if version != 2 {
+	if version != 2 && version != 3 {
 		return fmt.Errorf("EPub version %v is unsupported", version)
 	}
 	e.version = version
@@ -380,18 +393,24 @@ func (e *EPub) SetCoverImage(id Id) {
 	m := metadata{
 		kind: "meta",
 		pairs: []pair{
-			{"name", "cover"},
-			{"content", string(id)},
+			{key: "name", value: "cover"},
+			{key: "content", value: string(id)},
 		},
 	}
 	e.metadata = append(e.metadata, m)
+	e.coverID = id
 }
 
-// Write
+// Write out the book to the named file. The book will be written
+// in whichever version the epub object is tagged with. By default
+// this is V2.
 func (e *EPub) Write(name string) error {
+	log.Printf("Writing version %v", e.version)
 	switch e.version {
 	case 2:
 		return e.WriteV2(name)
+	case 3:
+		return e.WriteV3(name)
 	default:
 		return fmt.Errorf("Unable to write epub version %v files", e.version)
 	}

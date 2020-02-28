@@ -133,6 +133,9 @@ type Navpoint struct {
 	navpoints []*Navpoint
 }
 
+// NamespaceUUID is the namespace we're using for all V5 UUIDs
+var NamespaceUUID = uuid.Must(uuid.FromString("443ed275-966f-4099-8bee-5a6e1e474bb4"))
+
 // New creates a new empty ePub file.
 func New() *EPub {
 	ret := &EPub{lastId: make(map[string]int), version: 2, fixV2XHTML: true}
@@ -179,6 +182,11 @@ func (e *EPub) SetUUID(uu string) error {
 		return err
 	}
 	e.uuid = "urn:uuid:" + u.String()
+	for _, m := range e.metadata {
+		if m.kind == "dc.identifier" {
+			m.value = e.uuid
+		}
+	}
 	return nil
 }
 

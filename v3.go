@@ -22,6 +22,19 @@ func sub(in, regex, repl string) string {
 }
 
 func (e *EPub) WriteV3(name string) error {
+	buf, err := e.SerializeV3()
+	if err != nil {
+		return err
+	}
+
+	if err = ioutil.WriteFile(name, buf, 0666); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *EPub) SerializeV3() ([]byte, error) {
 	buf := new(bytes.Buffer)
 	z := zip.NewWriter(buf)
 
@@ -38,7 +51,7 @@ func (e *EPub) WriteV3(name string) error {
 	// add mimetype
 	w, err := z.Create("mimetype")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fmt.Fprint(w, "application/epub+zip")
 
@@ -46,11 +59,11 @@ func (e *EPub) WriteV3(name string) error {
 	for _, i := range e.images {
 		w, err = z.Create("OPS/" + i.name)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		length, err := w.Write(i.contents)
 		if err != nil {
-			return fmt.Errorf("unable to write %v, %v of %v bytes: %v", i.name, length, len(i.contents), err)
+			return nil, fmt.Errorf("unable to write %v, %v of %v bytes: %v", i.name, length, len(i.contents), err)
 		}
 	}
 
@@ -58,7 +71,7 @@ func (e *EPub) WriteV3(name string) error {
 	for _, x := range e.xhtml {
 		w, err = z.Create("OPS/" + x.name)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		c := x.contents
 		if e.fixV2XHTML {
@@ -66,7 +79,7 @@ func (e *EPub) WriteV3(name string) error {
 		}
 		length, err := w.Write([]byte(c))
 		if err != nil {
-			return fmt.Errorf("unable to write %v, %v of %v bytes: %v", x.name, length, len(x.contents), err)
+			return nil, fmt.Errorf("unable to write %v, %v of %v bytes: %v", x.name, length, len(x.contents), err)
 		}
 	}
 
@@ -74,11 +87,11 @@ func (e *EPub) WriteV3(name string) error {
 	for _, s := range e.styles {
 		w, err = z.Create("OPS/" + s.name)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		length, err := w.Write([]byte(s.contents))
 		if err != nil {
-			return fmt.Errorf("unable to write %v, %v of %v bytes: %v", s.name, length, len(s.contents), err)
+			return nil, fmt.Errorf("unable to write %v, %v of %v bytes: %v", s.name, length, len(s.contents), err)
 		}
 	}
 
@@ -86,11 +99,11 @@ func (e *EPub) WriteV3(name string) error {
 	for _, s := range e.scripts {
 		w, err = z.Create("OPS/" + s.name)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		length, err := w.Write([]byte(s.contents))
 		if err != nil {
-			return fmt.Errorf("unable to write %v, %v of %v bytes: %v", s.name, length, len(s.contents), err)
+			return nil, fmt.Errorf("unable to write %v, %v of %v bytes: %v", s.name, length, len(s.contents), err)
 		}
 	}
 
@@ -98,36 +111,33 @@ func (e *EPub) WriteV3(name string) error {
 	for _, f := range e.fonts {
 		w, err = z.Create("OPS/" + f.name)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		length, err := w.Write(f.contents)
 		if err != nil {
-			return fmt.Errorf("unable to write %v, %v of %v bytes: %v", f.name, length, len(f.contents), err)
+			return nil, fmt.Errorf("unable to write %v, %v of %v bytes: %v", f.name, length, len(f.contents), err)
 		}
 	}
 
 	if err = e.addTocV3(z); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = e.addContainerV3(z); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = e.addRenditionsV3(z); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Done adding stuff. Close off the file and write it out.
 	if err = z.Close(); err != nil {
-		return err
+		return nil, err
 	}
 
-	if err = ioutil.WriteFile(name, buf.Bytes(), 0666); err != nil {
-		return err
-	}
+	return buf.Bytes(), nil
 
-	return nil
 }
 
 func (e *EPub) obfuscate(raw []byte) []byte {

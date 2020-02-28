@@ -182,9 +182,11 @@ func (e *EPub) SetUUID(uu string) error {
 		return err
 	}
 	e.uuid = "urn:uuid:" + u.String()
-	for _, m := range e.metadata {
-		if m.kind == "dc.identifier" {
-			m.value = e.uuid
+	log.Printf("Setting uuid, theoretically %q", e.uuid)
+	for i, m := range e.metadata {
+		if m.kind == "dc:identifier" {
+			log.Printf("Set id to %q", e.uuid)
+			e.metadata[i].value = e.uuid
 		}
 	}
 	return nil

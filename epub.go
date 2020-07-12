@@ -70,6 +70,11 @@ type EPub struct {
 	// files when writing v3 format books.
 	fixV2XHTML bool
 	coverID    Id
+	// Some V3 properties
+	seriesName string // The name of the series this book belongs to, if any
+	setName    string // The name of the set this book belongs to, if any
+	entry      string // The entry number in the series/set
+
 }
 
 type pair struct {

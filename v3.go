@@ -231,6 +231,19 @@ func (e *EPub) addV3Metadata(w io.Writer) error {
 	if !seenDCTerms {
 		fmt.Fprintf(w, "    <meta property=\"dcterms:modified\">%s</meta>\n", time.Now().Format("2006-01-02T15:04:05Z"))
 	}
+	if e.seriesName != "" || e.setName != "" {
+		if e.seriesName != "" {
+			fmt.Fprintf(w, "    <meta property=\"belongs-to-collection\" id=\"seriesinfo\">%s</meta>\n", e.seriesName)
+			fmt.Fprint(w, "    <meta refines=\"#seriesinfo\" property=\"collection-type\">series</meta>\n")
+		}
+		if e.setName != "" {
+			fmt.Fprintf(w, "    <meta property=\"belongs-to-collection\" id=\"seriesinfo\">%s</meta>\n", e.setName)
+			fmt.Fprint(w, "    <meta refines=\"#seriesinfo\" property=\"collection-type\">set</meta>\n")
+		}
+		if e.entry != "" {
+			fmt.Fprintf(w, "    <meta refines=\"#seriesinfo\" property=\"group-position\">%s</meta>\n", e.entry)
+		}
+	}
 	fmt.Fprintf(w, "  </metadata>\n")
 
 	return nil

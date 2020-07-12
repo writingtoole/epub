@@ -1,7 +1,10 @@
 package epub
 
 import (
+	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 )
 
 // AddLanguage adds a language for the book. This should be an RFC3066
@@ -140,4 +143,40 @@ func (e *EPub) addDcItem(i, v string) {
 	m := metadata{kind: "dc:" + i, value: v}
 
 	e.metadata = append(e.metadata, m)
+}
+
+// SetSeries sets the name of the series this book belongs to. A book
+// may be in a set or a series, but not both. Note that this is only
+// valid for V3 epub books and won't be written out for V2 books.
+func (e *EPub) SetSeries(s string) error {
+	if e.seriesName != "" {
+		return errors.New("series name already set")
+	}
+	e.seriesName = s
+	return nil
+}
+
+// SetSet sets the name of the set this book belongs to. A book may be
+// in a set or a series, but not both. Note that this is only valid
+// for V3 epub books and won't be written out for v2 books.
+func (e *EPub) SetSet(s string) error {
+	if e.setName != "" {
+		return errors.New("set name already set")
+	}
+	e.setName = s
+	return nil
+}
+
+// Set the entry number in the set or series of this book. This is
+// optional, but if specified it must be a repeating dotted decimal
+// number. (like 1.2.3.4.5.6 or 2) This is only valid to set for books
+// that have a series or set name attached to them.
+func (e *EPub) SetEntryNumber(n string) error {
+	n = strings.TrimSpace(n)
+	m, err := regexp.MatchString(n, `^(\d+)(\.\d+)*$`)
+	if !m || err != nil {
+		return errors.New("entry number must match the pattern \\d+(\\.\\d+)*")
+	}
+	e.entry = n
+	return nil
 }

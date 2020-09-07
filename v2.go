@@ -43,8 +43,13 @@ func (e *EPub) SerializeV2() ([]byte, error) {
 		return flate.NewWriter(out, flate.BestCompression)
 	})
 
-	// add mimetype
-	w, err := z.Create("mimetype")
+	// add mimetype. Need to use the CreateHeader method because the
+	// mimetype file needs to be uncompressed.
+	h := &zip.FileHeader{
+		Name:   "mimetype",
+		Method: zip.Store,
+	}
+	w, err := z.CreateHeader(h)
 	if err != nil {
 		return nil, err
 	}

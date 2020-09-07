@@ -173,7 +173,7 @@ func (e *EPub) SetSet(s string) error {
 // that have a series or set name attached to them.
 func (e *EPub) SetEntryNumber(n string) error {
 	n = strings.TrimSpace(n)
-	m, err := regexp.MatchString(n, `^(\d+)(\.\d+)*$`)
+	m, err := regexp.MatchString(`^(\d+)(\.\d+)*$`, n)
 	if !m || err != nil {
 		return errors.New("entry number must match the pattern \\d+(\\.\\d+)*")
 	}

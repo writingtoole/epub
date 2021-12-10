@@ -430,3 +430,17 @@ func (e *EPub) Write(name string) error {
 		return fmt.Errorf("Unable to write epub version %v files", e.version)
 	}
 }
+
+// Return a serialized version of the epub book as a byte
+// slice. Useful in cases where you want the book but don't
+// necessarily need a file.
+func (e *EPub) Serialize() ([]byte, error) {
+	switch e.version {
+	case 2:
+		return e.SerializeV2()
+	case 3:
+		return e.SerializeV3()
+	default:
+		return nil, fmt.Errorf("Unable to create epub version %v files", e.version)
+	}
+}

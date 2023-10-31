@@ -40,6 +40,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -218,11 +219,38 @@ func (e *EPub) AddImage(path string, contents []byte) (Id, error) {
 	if err != nil {
 		return "", err
 	}
+	i := image{name: path, filetype: fmt, contents: contents, id: e.nextId("img")}
+
+	e.images = append(e.images, i)
+	return i.id, nil
+}
+
+// AddImageRegardless adds an image to the ePub book. Path is the
+// relative path in the book to the image, and contents is the image
+// itself.
+//
+// Unlike AddImage, AddImageRegardless doesn't check the file contents
+// and assumes the type from the extension. This can be an issue, as
+// some ebook reading software infers filetype from the filename, so
+// while it isn't required it is prudent to have the file extension
+// match the filetype.
+func (e *EPub) AddImageRegardless(path string, contents []byte) (Id, error) {
+
+	fmt := strings.ToLower(filepath.Ext(path))
+	if len(fmt) > 0 && fmt[0] == '.' {
+		fmt = fmt[1:]
+	}
+	// The mimetype for jpeg files is image/jpeg, so if we got jpg
+	// (which is legt as an extension) then jpeg it instead.
+	if fmt == "jpg" {
+		fmt = "jpeg"
+	}
 
 	i := image{name: path, filetype: fmt, contents: contents, id: e.nextId("img")}
 
 	e.images = append(e.images, i)
 	return i.id, nil
+
 }
 
 // AddImageFile adds an image file to the ePub book. source is the

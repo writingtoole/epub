@@ -1,4 +1,4 @@
-// Package epub creates ePub v2.0 format ebooks.
+// Package epub creates ePub ebooks in either V2 (by default) or V3 format.
 //
 // An ePub file consists of one or more XHTML files that represent
 // the text of your book, the resources those files reference, and the
@@ -44,7 +44,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gofrs/uuid"
+	"github.com/gofrs/uuid/v5"
 
 	img "image"
 	_ "image/gif"
